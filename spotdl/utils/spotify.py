@@ -17,7 +17,7 @@ from spotipy import Spotify
 from spotipy.cache_handler import CacheFileHandler, MemoryCacheHandler
 from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 
-from spotdl.utils.config import get_cache_path, get_spotify_cache_path, GlobalConfig
+from spotdl.utils.config import get_cache_path, get_spotify_cache_path
 
 __all__ = [
     "SpotifyError",
@@ -69,6 +69,7 @@ class Singleton(type):
         use_cache_file: bool = False,
         auth_token: Optional[str] = None,
         cache_path: Optional[str] = None,
+        proxy: Optional[str] = None,
     ) -> "Singleton":
         """
         Initializes the SpotifyClient.
@@ -91,6 +92,7 @@ class Singleton(type):
             raise SpotifyError("A spotify client has already been initialized")
 
         credential_manager = None
+        proxies = {"http": proxy, "https": proxy} if proxy else None
 
         cache_handler = (
             CacheFileHandler(cache_path or get_cache_path())
@@ -106,6 +108,7 @@ class Singleton(type):
                 scope="user-library-read,user-follow-read,playlist-read-private",
                 cache_handler=cache_handler,
                 open_browser=not headless,
+                proxies=proxies,
             )
         # Use SpotifyClientCredentials as auth manager
         else:
@@ -113,6 +116,7 @@ class Singleton(type):
                 client_id=client_id,
                 client_secret=client_secret,
                 cache_handler=cache_handler,
+                proxies=proxies,
             )
         if auth_token is not None:
             credential_manager = None
@@ -127,6 +131,7 @@ class Singleton(type):
             auth=auth_token,
             auth_manager=credential_manager,
             status_forcelist=(429, 500, 502, 503, 504, 404),
+            proxies=proxies,
         )
 
         # Return instance
@@ -151,8 +156,6 @@ class SpotifyClient(Spotify, metaclass=Singleton):
         - auth: The access token to use.
         - auth_manager: The auth manager to use.
         """
-
-        kwargs.update({"proxies": GlobalConfig.get_parameter("proxies")})
 
         super().__init__(*args, **kwargs)
         self._initialized = True
