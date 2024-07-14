@@ -17,7 +17,7 @@ from spotipy import Spotify
 from spotipy.cache_handler import CacheFileHandler, MemoryCacheHandler
 from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 
-from spotdl.utils.config import get_cache_path, get_spotify_cache_path
+from spotdl.utils.config import get_cache_path, get_spotify_cache_path, GlobalConfig
 
 __all__ = [
     "SpotifyError",
@@ -151,6 +151,8 @@ class SpotifyClient(Spotify, metaclass=Singleton):
         - auth: The access token to use.
         - auth_manager: The auth manager to use.
         """
+
+        kwargs.update({"proxies": GlobalConfig.get_parameter("proxies")})
 
         super().__init__(*args, **kwargs)
         self._initialized = True
